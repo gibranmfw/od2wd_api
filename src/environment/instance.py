@@ -7,7 +7,10 @@ env = {
     "DUMP_PATH": os.environ.get("DUMP_PATH"),
     "MODEL_PATH": os.environ.get("MODEL_PATH"),
     "INDEX_URL": os.environ.get("INDEX_URL"),
-    'PROPERTY_INDEX': os.environ.get('PROPERTY_INDEX')
+    'PROPERTY_INDEX': os.environ.get('PROPERTY_INDEX'),
+    'INDEX_HOST': os.environ.get("INDEX_HOST"),
+    'INDEX_PORT': os.environ.get("INDEX_PORT"),
+    'MODEL_NAME': os.environ.get("MODEL_NAME")
 }
 
 # Configuration for each environment

@@ -25,7 +25,7 @@ class Server(object):
 
         self.ns = self.api.namespace('main')
     
-        self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + 'w2vec_wiki_id_case')
+        self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
         self.es = connect_elasticsearch()
     def run(self):
         self.app.run(

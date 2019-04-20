@@ -14,7 +14,7 @@ logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
 logging.root.setLevel(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_model(train_data="idwiki-latest-pages-articles.xml.bz2", model_name="w2vec_wiki_id_case"):
+def create_model(train_data="idwiki-latest-pages-articles.xml.bz2", model_name=env['MODEL_NAME']):
     logger.info("running %s" % ' '.join(sys.argv))
     preprocessing(logger, env['DUMP_PATH'] + train_data, env['DUMP_PATH'] + "wiki.id.case.text")
     train_word2vec(logger, env['DUMP_PATH'] + "wiki.id.case.text", env['MODEL_PATH'] + "w2vec_wiki_id_case")
@@ -24,7 +24,7 @@ def dumping_property(filename='property.json', path_to_save=env['DUMP_PATH']):
     dump_property(filename, path_to_save)
     logger.info('Finish, data saved in: ' + path_to_save + filename)
 
-def create_indexer(pi_name='wd_property', ei_name='wd_entity', prop_doc_type='members'):
+def create_indexer(pi_name=env['PROPERTY_INDEX'], ei_name='wd_entity', prop_doc_type='members'):
     logger.info('Start creating Index')
 
     with open(env['DUMP_PATH'] + 'property.json') as f:

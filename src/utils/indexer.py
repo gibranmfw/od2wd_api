@@ -1,9 +1,10 @@
 from elasticsearch import Elasticsearch
+from environment.instance import env
 import logging
 
 def connect_elasticsearch():
     _es = None
-    _es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+    _es = Elasticsearch([{'host': env['INDEX_HOST'], 'port': env['INDEX_PORT']}])
     if _es.ping():
         print('Connected to ES Service')
     else:

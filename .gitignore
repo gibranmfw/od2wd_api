@@ -69,4 +69,4 @@ ENV/
 
 # Word2Vec
 data/dump/idwiki-latest-pages-articles.xml.bz2
-data/model/w2vec_wiki_id_case*
+data/model/

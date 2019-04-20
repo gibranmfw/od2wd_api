@@ -1,10 +1,10 @@
 from flask import Flask
 from flask_restplus import Api, Resource, fields
 
-from server.instance import server
-from models.property import prop, prop_response, prop_list, prop_response_list
-from environment.instance import env
-from utils.mapper import map_property, map_property_batch
+from src.server.instance import server
+from src.models.property import prop, prop_response, prop_list, prop_response_list
+from src.environment.instance import env
+from src.utils.mapper import map_property, map_property_batch
 
 app, ns = server.app, server.ns
 

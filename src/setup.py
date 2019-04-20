@@ -5,10 +5,10 @@ import logging
 import sys
 
 # local import
-from environment.instance import env
-from utils.indexer import connect_elasticsearch, create_index, store_record, search
-from utils.dumper import dump_property
-from utils.word2vec import preprocessing, train_word2vec
+from src.environment.instance import env
+from src.utils.indexer import connect_elasticsearch, create_index, store_record, search
+from src.utils.dumper import dump_property
+from src.utils.word2vec import preprocessing, train_word2vec
 
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
 logging.root.setLevel(level=logging.INFO)

@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from environment.instance import env
+from src.environment.instance import env
 import logging
 
 def connect_elasticsearch():

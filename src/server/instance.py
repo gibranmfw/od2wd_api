@@ -1,20 +1,15 @@
 import logging
+import click
 from flask import Flask
 from flask_restplus import Api, Resource, fields
 
 from gensim.models import Word2Vec
 
-from environment.instance import environment_config, env
-from utils.indexer import connect_elasticsearch
+from src.environment.instance import environment_config, env
+from src.utils.indexer import connect_elasticsearch
 
 class Server(object):
     def __init__(self):
-        logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
-        logging.root.setLevel(level=logging.INFO)
-        logging.basicConfig(level=logging.ERROR)
-        logger = logging.getLogger(__name__)
-        self._logger = logger
-
         self.app = Flask(__name__)
         self.api = Api(self.app, 
             version='0.1', 
@@ -25,8 +20,19 @@ class Server(object):
 
         self.ns = self.api.namespace('main')
     
+    def load_model(self):
         self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
+
+    def load_logger(self):
+        logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
+        logging.root.setLevel(level=logging.INFO)
+        logging.basicConfig(level=logging.ERROR)
+        logger = logging.getLogger(__name__)
+        self._logger = logger
+    
+    def load_index(self):
         self.es = connect_elasticsearch()
+
     def run(self):
         self.app.run(
                 debug = environment_config["debug"], 
@@ -34,3 +40,9 @@ class Server(object):
             )
 
 server = Server()
+
+@server.app.before_first_request
+def setup():
+    server.load_logger()
+    server.load_index()
+    server.load_model()

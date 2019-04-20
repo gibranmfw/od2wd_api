@@ -1,5 +1,5 @@
 from flask_restplus import fields
-from server.instance import server
+from src.server.instance import server
 
 ent = server.api.model('ent', {
     'item': fields.String(required=True, min_length=1, description='String you want to map to Wikidata Entity', example='kelapa gading'),

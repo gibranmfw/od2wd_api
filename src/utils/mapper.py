@@ -4,8 +4,8 @@ import numpy as np
 
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
-from utils.indexer import search
-from utils.wikimedia import searchEntity, searchObjWProperty, searchProperty
+from src.utils.indexer import search
+from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty
 
 def lDistance(s1, s2):
     if len(s1) > len(s2):

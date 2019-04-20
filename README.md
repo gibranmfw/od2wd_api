@@ -11,20 +11,21 @@ Part of OD2WD project
     ```bash
     pipenv sync
     ```
-3. Download Wikipedia dump data from https://dumps.wikimedia.org/idwiki/latest/idwiki-latest-pages-articles.xml.bz2, put it in data/dump/
-4. Create word2vec model and elasticsearch index for the first time
+3. Download Wikipedia dump data from https://dumps.wikimedia.org/idwiki/latest/idwiki-latest-pages-articles.xml.bz2
+4. Put Wikipedia dump data in src/data/dump/
+5. Create word2vec model and elasticsearch index for the first time
 
     ```bash
     flask setup_all
     ```
 
-5. Run the app using
+6. Run the app using
 
     ```bash
     flask run
     ```
 
-6. Update index using
+7. Update index using
 
     ```bash
     flask update_index [index_name]

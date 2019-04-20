@@ -113,3 +113,7 @@ def store_record(elastic_object, index_name, record):
 def search(es_object, index_name, search):
     res = es_object.search(index=index_name, body=search)
     return res
+
+def delete(es_object, index_name):
+    es_object.indices.delete(index= index_name, ignore=[400, 404])
+    print('{} deleted'.format(index_name))

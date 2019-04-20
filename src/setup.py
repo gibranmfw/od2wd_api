@@ -6,7 +6,7 @@ import sys
 
 # local import
 from src.environment.instance import env
-from src.utils.indexer import connect_elasticsearch, create_index, store_record, search
+from src.utils.indexer import connect_elasticsearch, create_index, store_record, search, delete
 from src.utils.dumper import dump_property
 from src.utils.word2vec import preprocessing, train_word2vec
 
@@ -44,3 +44,7 @@ def create_indexer(pi_name=env['PROPERTY_INDEX'], ei_name='wd_entity', prop_doc_
 
         logger.info("Finish creating index")
         logger.debug("Total data stored in index: {}".format(count))
+
+def delete_index(index_name):
+    es = connect_elasticsearch()
+    delete(es, index_name)

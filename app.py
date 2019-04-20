@@ -19,9 +19,8 @@ def create_model():
     setup.create_model()
 
 @server.app.cli.command()
-def dump_property():
+@click.argument('index_name')
+def update_index(index_name):
+    setup.delete_index(index_name)
     setup.dumping_property()
-
-@server.app.cli.command()
-def create_index():
     setup.create_indexer()

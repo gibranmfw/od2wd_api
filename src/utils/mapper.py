@@ -28,10 +28,13 @@ def ranking(candidateList, propertyLbl):
         results = searchObjWProperty(candidateList[i]['id'], 'P31')
         
         if(len(results['results']['bindings']) > 0):
-            lblDis = lDistance(propertyLbl, results['results']['bindings'][0]['itemLabel']['value'].lower())   
+            lblDis = lDistance(propertyLbl.lower(), results['results']['bindings'][0]['itemLabel']['value'].lower())   
             if(lblDis < 3):
                 res.append(candidateList[i])
     
+    if(len(res) == 0):
+        res = candidateList
+
     return res
 
 def best_sim_score(alias_vectors, query_vector):

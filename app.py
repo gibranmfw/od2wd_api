@@ -9,18 +9,21 @@ from src.resources.entity import *
 import click
 
 @server.app.cli.command()
-def setup_all():
+def setupall():
     setup.create_model()
-    setup.dumping_property()
     setup.create_indexer()
 
 @server.app.cli.command()
-def create_model():
+def createmodel():
     setup.create_model()
 
 @server.app.cli.command()
+def createindex():
+    setup.create_indexer()
+
+@server.app.cli.command()
 @click.argument('index_name')
-def update_index(index_name):
+def updateindex(index_name):
     setup.delete_index(index_name)
     setup.dumping_property()
     setup.create_indexer()

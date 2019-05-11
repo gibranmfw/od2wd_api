@@ -2,6 +2,8 @@ import logging
 import json
 import numpy as np
 
+from itertools import islice
+from collections import OrderedDict
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
 from src.utils.indexer import search
@@ -60,49 +62,45 @@ def cosine_sim(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1)* np.linalg.norm(v2))
 
 def map_entity(data, context, model, limit=10):
-    result = ''
-    resultLabel = ''
+    result = {}
     jsons = searchEntity(data.lower(), limit)['search']
     jsons = ranking(jsons, context)
     
     if(len(jsons) > 0):
-        cand = None
-        sim_score = -1
         qword_vector = phrase_vector(model, data)
         if(qword_vector is not None):
             for json in jsons:
                 sim = 0
-                
                 elabel = json['label']
                 eword_vector = phrase_vector(model, elabel)
                 if(eword_vector is not None):
                     sim = cosine_sim(qword_vector, eword_vector)
-                
-                if(sim > sim_score):
-                    sim_score = sim
-                    cand = json
-            
-            result = cand['id']
-            resultLabel = cand['label']
-            
+                    result[min(sim, 1.0)] = {'id': json['id'], 'label': json['label']}
+                    
+            od = OrderedDict(sorted(result.items(), reverse=True))
+            result = OrderedDict(islice(od.items(), 0, limit))
         else:
-            result = 'NOT IN CORPUS'
-            resultLabel = 'NOT IN CORPUS'
+            result[0] = {'id': 'NOT IN CORPUS', 'label':'NOT IN CORPUS'}
     else:
-        result = 'NOT FOUND'
-        resultLabel = 'NOT FOUND'
+         result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
     
-    return result, resultLabel
+    return result
 
-def map_entity_batch(datas, model, limit=10):
+def map_entity_batch(datas, model):
     res_list = []
     for data in datas:
-        ids, label = map_entity(data['item'], data['context'], model, limit)
-        res = {"id": ids, "label": label}
-        res_list.append(res)
+        res_map = {}
+        cand_list = []
+        cand_ent = map_entity(data['item'], data['context'], model, data['limit'])
+        for key, value in cand_ent.items():
+            res = {"id": value['id'], "label": value['label'], 'score': key}
+            cand_list.append(res)
+        res_map['item'] = data['item']
+        res_map['link_to'] = cand_list
+        res_list.append(res_map)
     return res_list
 
-def map_property(header, header_range, property_index, w2v_model, es_client):
+def map_property(header, header_range, property_index, w2v_model, es_client, limit):
     factory = StopWordRemoverFactory()
     stopword = factory.create_stop_word_remover()
 
@@ -110,8 +108,7 @@ def map_property(header, header_range, property_index, w2v_model, es_client):
     header2 = header.lower()
     header = stopword.remove(header2)
 
-    result = ''
-    resultLabel = ''
+    result = {}
 
     search_object = {
             "from" : 0, 
@@ -137,8 +134,6 @@ def map_property(header, header_range, property_index, w2v_model, es_client):
         
     res = search(es_client, property_index, json.dumps(search_object))['hits']['hits']
     if(len(res) > 0):
-        cand = None
-        sim_score = -1
         qword_vector = phrase_vector(w2v_model, header)
         for item in res:
             alias_vector = []
@@ -152,21 +147,23 @@ def map_property(header, header_range, property_index, w2v_model, es_client):
 
                 sim = best_sim_score(alias_vector, qword_vector)
             
-            if(sim > sim_score):
-                sim_score = sim
-                cand = item
-        
-        result = cand['_source']['id']
-        resultLabel = cand['_source']['labelId']
-        
-    return result, resultLabel
+            result[min(sim, 1.0)] = {'id': item['_source']['id'], 'label': item['_source']['labelId']}
+    
+    od = OrderedDict(sorted(result.items(), reverse=True))
+
+    return OrderedDict(islice(od.items(), 0, limit))
 
 
 def map_property_batch(properties, property_index, w2v_model, es_client):
     res_list = []
     for prop in properties:
-        ids, label = map_property(prop['item'], prop['item_range'], property_index, w2v_model, es_client)
-        res = {"id": ids, "label": label}
-        res_list.append(res)
-    
+        res_map = {}
+        cand_list = []
+        cand_props = map_property(prop['item'], prop['item_range'], property_index, w2v_model, es_client, prop['limit'])
+        for key, value in cand_props.items():
+            res = {"id": value['id'], "label": value['label'], "score": key}
+            cand_list.append(res)
+        res_map['item'] = prop['item']
+        res_map['map_to'] = cand_list
+        res_list.append(res_map)
     return res_list

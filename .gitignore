@@ -20,6 +20,9 @@ lib64/
 parts/
 sdist/
 var/
+myprojectenv/
+bin/
+share/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -62,6 +65,7 @@ instance/
 # virtualenv
 venv/
 ENV/
+pyvenv.cfg
 
 # Editors
 .idea/
@@ -70,3 +74,5 @@ ENV/
 # Word2Vec
 data/dump/idwiki-latest-pages-articles.xml.bz2
 data/model/
+
+lib64

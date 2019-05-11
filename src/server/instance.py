@@ -43,20 +43,37 @@ class ReverseProxied(object):
 
 class Server(object):
     def __init__(self):
+        logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
+        logging.root.setLevel(level=logging.INFO)
+        logging.basicConfig(level=logging.ERROR)
+        logger = logging.getLogger(__name__)
+        self._logger = logger
+
         self.app = Flask(__name__)
         self.app.wsgi_app = ReverseProxied(self.app.wsgi_app)
+<<<<<<< HEAD
         self.api = Api(self.app, 
             version='0.1', 
+=======
+        self.api = Api(self.app,
+            version='0.1',
+>>>>>>> 267c126053e04e7787e23cf3202ac77304cc60e9
             title='OD2WD API',
             description='Mapping Open Data to Wikidata', 
-            doc = environment_config["swagger-url"]
+#            doc = environment_config["swagger-url"]
         )
 
         self.ns = self.api.namespace('main')
+<<<<<<< HEAD
         self.load_logger()
         self.load_index()
         self.load_model()
     
+=======
+        self.es = connect_elasticsearch()
+        self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
+
+>>>>>>> 267c126053e04e7787e23cf3202ac77304cc60e9
     def load_model(self):
         self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
 
@@ -66,7 +83,7 @@ class Server(object):
         logging.basicConfig(level=logging.ERROR)
         logger = logging.getLogger(__name__)
         self._logger = logger
-    
+
     def load_index(self):
         self.es = connect_elasticsearch()
 
@@ -77,3 +94,12 @@ class Server(object):
             )
 
 server = Server()
+<<<<<<< HEAD
+=======
+
+#@server.app.before_first_request
+#def setup():
+#    server.load_logger()
+#    server.load_index()
+#    server.load_model()
+>>>>>>> 267c126053e04e7787e23cf3202ac77304cc60e9

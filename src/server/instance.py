@@ -54,7 +54,7 @@ class Server(object):
         self.api = Api(self.app,
             version='0.1',
             title='OD2WD API',
-            description='Mapping Open Data to Wikidata', 
+            description='Mapping Open Data to Wikidata',
 #            doc = environment_config["swagger-url"]
         )
         self.api.decorators = [cors.crossdomain(origin='*')]
@@ -62,7 +62,7 @@ class Server(object):
         self.load_logger()
         self.load_index()
         self.load_model()
-    
+        
     def load_model(self):
         self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
 

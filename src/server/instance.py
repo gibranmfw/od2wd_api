@@ -1,7 +1,7 @@
 import logging
 import click
 from flask import Flask
-from flask_restplus import Api, Resource, fields, api, cors
+from flask_restplus import Api, Resource, fields, cors
 
 from gensim.models import Word2Vec
 
@@ -57,13 +57,12 @@ class Server(object):
             description='Mapping Open Data to Wikidata',
 #            doc = environment_config["swagger-url"]
         )
-        self.api.decorators=[cors.crossdomain(origin='*')]
-
+        self.api.decorators = [cors.crossdomain(origin='*')]
         self.ns = self.api.namespace('main')
         self.load_logger()
         self.load_index()
         self.load_model()
-
+        
     def load_model(self):
         self.w2v_model = Word2Vec.load(env['MODEL_PATH'] + env['MODEL_NAME'])
 
@@ -84,13 +83,3 @@ class Server(object):
             )
 
 server = Server()
-
-#@server.app.before_first_request
-#def setup():
-#    server.load_logger()
-#    server.load_index()
-#    server.load_model()
-
-#@server.app.after_request
-#def after_request(response):
-#    response.headers.add('Access-Control-Allow-Origin', '*')

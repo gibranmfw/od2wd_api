@@ -1,6 +1,7 @@
 import logging
 import json
 import numpy as np
+import re
 
 from itertools import islice
 from collections import OrderedDict
@@ -104,9 +105,12 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
     factory = StopWordRemoverFactory()
     stopword = factory.create_stop_word_remover()
 
+    header = header.re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
     header = header.replace('_', ' ')
-    header2 = header.lower()
-    header = stopword.remove(header2)
+    header = header.replace('(', '')
+    header = header.replace(')', '')
+    header = header.lower()
+    header = stopword.remove(header)
 
     result = {}
 

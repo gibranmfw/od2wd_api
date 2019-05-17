@@ -18,7 +18,7 @@ class EntMapper(object):
 
 em = EntMapper()
 
-@ns.route('/entity/bulk')
+@ns.route('/entity')
 class BulkEntityMapper(Resource):
     @ns.expect(ent_list, validate=True)
     @ns.marshal_list_with(ent_response_list)

@@ -105,7 +105,7 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
     factory = StopWordRemoverFactory()
     stopword = factory.create_stop_word_remover()
 
-    header = header.re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
+    header = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
     header = header.replace('_', ' ')
     header = header.replace('(', '')
     header = header.replace(')', '')
@@ -137,7 +137,6 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
         }
         
     res = search(es_client, property_index, json.dumps(search_object))['hits']['hits']
-    print(res)
     if(len(res) > 0):
         qword_vector = phrase_vector(w2v_model, header)
         for item in res:

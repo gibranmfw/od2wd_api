@@ -56,7 +56,7 @@ def ranking(candidateList, property_data, model, is_protagonist=False):
     res = []
     for candidate in candidateList:
         if(is_protagonist):
-            if(is_instance_of(candidate, property_data)):
+            if(is_instance_of(candidate['id'], property_data)):
                 res.append({'candidate': candidate, 'score': 1})
             else:
                 res.append({'candidate': candidate, 'score': 0})
@@ -146,7 +146,7 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
                         result[score] = [ent_map] 
 
     if(len(result) == 0):
-        result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
+        result[0] = [{'id': 'NOT FOUND', 'label':'NOT FOUND', 'description':'NOT FOUND'}]
     else:
         result = OrderedDict(sorted(result.items(), reverse=True))
         result = OrderedDict(islice(result.items(), 0, limit))
@@ -162,7 +162,7 @@ def map_entity_batch(datas, model):
         cand_ent = map_entity(data['item'], data['context'], model, limit, data['is_protagonist'])
         for key, value in cand_ent.items():
             for item in value:
-                res = {"id": item['id'], "label": item['label'], "descriptoin": item['description'], 'score': key}
+                res = {"id": item['id'], "label": item['label'], "description": item['description'], 'score': key}
                 cand_list.append(res)
                 if(len(cand_list) > limit):
                     break
@@ -214,7 +214,7 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
                         alias_vector.append(temp)
 
                 sim = best_sim_score(alias_vector, qword_vector)
-            
+
             result[min(sim, 1.0)] = {
                 'id': item['_source']['id'], 
                 'label': item['_source']['labelId'],
@@ -233,7 +233,7 @@ def map_property_batch(properties, property_index, w2v_model, es_client):
         cand_list = []
         cand_props = map_property(prop['item'], prop['item_range'], property_index, w2v_model, es_client, prop['limit'])
         for key, value in cand_props.items():
-            res = {"id": value['id'], "label": value['label'], "descriptoin": value['description'], "score": key}
+            res = {"id": value['id'], "label": value['label'], "description": value['description'], "score": key}
             cand_list.append(res)
         res_map['item'] = prop['item']
         res_map['map_to'] = cand_list
@@ -302,7 +302,7 @@ def protagonist_mapping(protagonist, limit, w2v_model):
                             result[score] = protag_map
                         
     if(len(result) == 0):
-        result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
+        result[0] = [{'id': 'NOT FOUND', 'label':'NOT FOUND', 'description': 'NOT FOUND'}]
     else:
         result = OrderedDict(sorted(result.items(), reverse=True))
         result = OrderedDict(islice(result.items(), 0, limit))
@@ -310,6 +310,6 @@ def protagonist_mapping(protagonist, limit, w2v_model):
     cand_list = []
     for key, values in result.items():
         for value in values:
-            res = {"id": value['id'], "label": value['label'], "descriptoin": value['description'], "score": key}
+            res = {"id": value['id'], "label": value['label'], "description": value['description'], "score": key}
             cand_list.append(res)
     return cand_list

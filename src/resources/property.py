@@ -22,6 +22,10 @@ pm = PropMapper()
 class BulkPropertyMapper(Resource):
     @ns.expect(prop_list, validate=True)
     @ns.marshal_list_with(prop_response_list)
-    @ns.doc(params={'item': 'String you want to map to Wikidata Property', 'item_range': 'Range of that Property'})
+    @ns.doc(params={
+        'item': 'String you want to map to Wikidata Property', 
+        'item_range': 'Range of that Property',
+        'limit': 'Limit entity candidates'
+        })
     def post(self):
         return pm.search_property_batch(ns.payload['properties'])

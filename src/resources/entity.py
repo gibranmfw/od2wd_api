@@ -22,6 +22,11 @@ em = EntMapper()
 class BulkEntityMapper(Resource):
     @ns.expect(ent_list, validate=True)
     @ns.marshal_list_with(ent_response_list)
-    @ns.doc(params={'item': 'String you want to map to Wikidata Entity', 'context': 'context of the string you want to map'})
+    @ns.doc(params={
+        'item': 'String you want to map to Wikidata Entity', 
+        'context': 'context of the string you want to map',
+        'limit': 'Limit entity candidates',
+        'is_protagonist': 'True if the entitiy is protagonist, false if not'
+        })
     def post(self):
         return em.search_entity_bacth(ns.payload['entities'])

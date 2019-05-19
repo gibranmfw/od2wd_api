@@ -79,3 +79,19 @@ def is_class(entity_id):
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
     return len(results['results']['bindings']) > 0
+
+def is_instance_of(entity_id, class_id):
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+
+    sparql.setQuery("""
+    SELECT ?item ?itemLabel
+    WHERE
+    {
+        bind (wd:%s as ?item)
+        wd:%s wdt:P31 ?item .
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "id" }
+    }
+    """% (class_id, entity_id))
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    return len(results['results']['bindings']) > 0

@@ -8,8 +8,26 @@ from collections import OrderedDict
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
 from src.utils.indexer import search
-from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty, is_class
+from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty, is_class, is_instance_of
 
+def preprocessing(text, option=None):
+    if(option == 'property'):
+        factory = StopWordRemoverFactory()
+        stopword = factory.create_stop_word_remover()
+        header = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
+        header = stopword.remove(header)
+    elif(option == 'protagonist'):
+        if("nama " in text):
+            text = text.replace("nama ", "")
+
+    text = text.replace('_', ' ')
+    text = text.replace('(', '')
+    text = text.replace(')', '')
+    text = text.replace(',', ' ')
+    text = text.lower()
+
+    return text
+    
 def sigmoid(x, derivative=False):
     sigm = 1. / (1. + np.exp(-x))
     if derivative:
@@ -34,19 +52,24 @@ def lDistance(s1, s2):
         distances = distances_
     return distances[-1]
 
-def ranking(candidateList, propertyLbl):
+def ranking(candidateList, property_data, model, is_protagonist=False):
     res = []
-    for i in range(len(candidateList)):
-        results = searchObjWProperty(candidateList[i]['id'], 'P31')
-        
-        if(len(results['results']['bindings']) > 0):
-            lblDis = lDistance(propertyLbl.lower(), results['results']['bindings'][0]['itemLabel']['value'].lower())   
-            if(lblDis < 3):
-                res.append(candidateList[i])
-    
-    if(len(res) == 0):
-        res = candidateList
-
+    for candidate in candidateList:
+        if(is_protagonist):
+            if(is_instance_of(candidate, property_data)):
+                res.append({'candidate': candidate, 'score': 1})
+            else:
+                res.append({'candidate': candidate, 'score': 0})
+        else:
+            results = searchObjWProperty(candidate['id'], 'P31')
+            sim = 0
+            if(len(results['results']['bindings']) > 0):
+                candVector = phrase_vector(model, property_data)
+                prop_class = preprocessing(results['results']['bindings'][0]['itemLabel']['value'])
+                contVector = phrase_vector(model, prop_class)
+                if(candVector is not None and contVector is not None):
+                    sim = cosine_sim(candVector, contVector)
+            res.append({'candidate': candidate, 'score': sim})
     return res
 
 def best_sim_score(alias_vectors, query_vector):
@@ -71,28 +94,62 @@ def phrase_vector(model, word):
 def cosine_sim(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1)* np.linalg.norm(v2))
 
-def map_entity(data, context, model, limit=10):
+def map_entity(data, context, model, limit=10, is_protagonist=False):
     result = {}
-    jsons = searchEntity(data.lower(), limit)['search']
-    jsons = ranking(jsons, context)
+    data = preprocessing(data)
+    context = preprocessing(context)
+    jsons = searchEntity(data, limit)['search']
+    jsons = ranking(jsons, context, model, is_protagonist)
     
     if(len(jsons) > 0):
         qword_vector = phrase_vector(model, data)
         if(qword_vector is not None):
             for json in jsons:
                 sim = 0
-                elabel = json['label']
+                elabel = json['candidate']['label']
+                elabel = preprocessing(elabel)
                 eword_vector = phrase_vector(model, elabel)
                 if(eword_vector is not None):
                     sim = cosine_sim(qword_vector, eword_vector)
-                    result[min(sim, 1.0)] = {'id': json['id'], 'label': json['label']}
+                    description = ''
+                    if('description' in json['candidate']):
+                        description = json['candidate']['description']
                     
-            od = OrderedDict(sorted(result.items(), reverse=True))
-            result = OrderedDict(islice(od.items(), 0, limit))
+                    ent_map = {
+                        'id': json['candidate']['id'], 
+                        'label': json['candidate']['label'],
+                        'description': description
+                        }
+                    
+                    score = min(np.average([sim, json['score']]), 1.0)
+                    if(score in result.keys()):
+                        result[score].append(ent_map)
+                    else:
+                        result[score] = [ent_map]
         else:
-            result[0] = {'id': 'NOT IN CORPUS', 'label':'NOT IN CORPUS'}
+            for json in jsons:
+                elabel = json['candidate']['label']
+                dist = lDistance(elabel, data)
+                if(dist <= 3):
+                    description = ''
+                    if('description' in json['candidate']):
+                        description = json['candidate']['description']
+                    ent_map = {
+                    'id': json['candidate']['id'], 
+                    'label': json['candidate']['label'],
+                    'description': description
+                    }
+                    score = np.average([json['score'], transform_sigmoid(dist)])
+                    if(score in result.keys()):
+                        result[score].append(ent_map)
+                    else:
+                        result[score] = [ent_map] 
+
+    if(len(result) == 0):
+        result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
     else:
-         result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
+        result = OrderedDict(sorted(result.items(), reverse=True))
+        result = OrderedDict(islice(result.items(), 0, limit))
     
     return result
 
@@ -101,28 +158,25 @@ def map_entity_batch(datas, model):
     for data in datas:
         res_map = {}
         cand_list = []
-        cand_ent = map_entity(data['item'], data['context'], model, data['limit'])
+        limit = data['limit']
+        cand_ent = map_entity(data['item'], data['context'], model, limit, data['is_protagonist'])
         for key, value in cand_ent.items():
-            res = {"id": value['id'], "label": value['label'], 'score': key}
-            cand_list.append(res)
+            for item in value:
+                res = {"id": item['id'], "label": item['label'], "descriptoin": item['description'], 'score': key}
+                cand_list.append(res)
+                if(len(cand_list) > limit):
+                    break
+                    
+            if(len(cand_list) > limit):
+                break
         res_map['item'] = data['item']
         res_map['link_to'] = cand_list
         res_list.append(res_map)
     return res_list
 
 def map_property(header, header_range, property_index, w2v_model, es_client, limit):
-    factory = StopWordRemoverFactory()
-    stopword = factory.create_stop_word_remover()
-
-    header = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
-    header = header.replace('_', ' ')
-    header = header.replace('(', '')
-    header = header.replace(')', '')
-    header = header.lower()
-    header = stopword.remove(header)
-
+    header = preprocessing(header, 'property')
     result = {}
-
     search_object = {
             "from" : 0, 
             "size" : 100,
@@ -154,13 +208,18 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
             alias = item['_source']['aliasId']
             if(qword_vector is not None):
                 for alt  in alias:
+                    alt = preprocessing(alt)
                     temp = phrase_vector(w2v_model, alt)
                     if(temp is not None):
                         alias_vector.append(temp)
 
                 sim = best_sim_score(alias_vector, qword_vector)
             
-            result[min(sim, 1.0)] = {'id': item['_source']['id'], 'label': item['_source']['labelId']}
+            result[min(sim, 1.0)] = {
+                'id': item['_source']['id'], 
+                'label': item['_source']['labelId'],
+                'description': item['_source']['descriptionEn']
+                }
     
     od = OrderedDict(sorted(result.items(), reverse=True))
 
@@ -174,9 +233,83 @@ def map_property_batch(properties, property_index, w2v_model, es_client):
         cand_list = []
         cand_props = map_property(prop['item'], prop['item_range'], property_index, w2v_model, es_client, prop['limit'])
         for key, value in cand_props.items():
-            res = {"id": value['id'], "label": value['label'], "score": key}
+            res = {"id": value['id'], "label": value['label'], "descriptoin": value['description'], "score": key}
             cand_list.append(res)
         res_map['item'] = prop['item']
         res_map['map_to'] = cand_list
         res_list.append(res_map)
     return res_list
+
+def protagonist_mapping(protagonist, limit, w2v_model):
+    protagonist = preprocessing(protagonist, 'protagonist')
+    jsons = searchEntity(protagonist, limit)['search']
+    qword_vector = phrase_vector(w2v_model, protagonist)
+    result = {}
+    if(qword_vector is not None):
+        for json in jsons:
+            ids = json['id']
+            if(is_class(ids)):
+                alias = []
+                if('aliases' in json.keys()):
+                    alias = json['aliases']
+                label = json['match']['text']
+                if(label not in alias):
+                    alias.append(label)
+
+                description = ''
+                if('description' in json.keys()):
+                    description = json['description']
+            
+                sim = 0
+                alias_vector = []
+                for alt in alias:
+                    alt = preprocessing(alt)
+                    temp = phrase_vector(w2v_model, alt)
+                    if(temp is not None):
+                        alias_vector.append(temp)
+                        
+                sim = best_sim_score(alias_vector, qword_vector)
+                protag_map = {'id': ids, 'label': alias[0], 'description': description}
+                if(sim in result.keys()):
+                    result[sim].append(protag_map)
+                else:
+                    result[sim] = [protag_map]
+    else:
+        for json in jsons:
+            ids = json['id']
+            if(is_class(ids)):
+                alias = []
+                if('aliases' in json.keys()):
+                    alias = json['aliases']
+                label = json['match']['text']
+                if(label not in alias):
+                    alias.append(label)
+
+                description = ''
+                if('description' in json.keys()):
+                    description = json['description']
+                
+                dist = 0
+                for alt in alias:
+                    alt = preprocessing(alt)
+                    dist = lDistance(alt, protagonist)
+                    if(dist <= 3):
+                        score = transform_sigmoid(dist)
+                        protag_map = {'id': ids, 'label': alias[0], 'description': description}
+                        if(score in protag_map.keys()):
+                            result[score].append(protag_map)
+                        else:
+                            result[score] = protag_map
+                        
+    if(len(result) == 0):
+        result[0] = {'id': 'NOT FOUND', 'label':'NOT FOUND'}
+    else:
+        result = OrderedDict(sorted(result.items(), reverse=True))
+        result = OrderedDict(islice(result.items(), 0, limit))
+    
+    cand_list = []
+    for key, values in result.items():
+        for value in values:
+            res = {"id": value['id'], "label": value['label'], "descriptoin": value['description'], "score": key}
+            cand_list.append(res)
+    return cand_list

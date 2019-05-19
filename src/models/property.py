@@ -10,6 +10,7 @@ prop = server.api.model('mapping input', {
 prop_response = server.api.model('property', {
     'id': fields.String(required=True, min_length=1, description='ID of the Property', example='P6375'),
     'label': fields.String(required=True, min_length=1, description='Label of the Property', example='alamat'),
+    'description': fields.String(required=True, min_length=1, description='Description of the property', example='alamat'),
     'score': fields.Float(example='1', description='Confidence score')
 })
 

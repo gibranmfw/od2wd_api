@@ -67,3 +67,15 @@ def searchPropertyRange(property_id):
     results = sparql.query().convert()
     return results
 
+def is_class(entity_id):
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+
+    sparql.setQuery("""
+    SELECT distinct ?protag  WHERE { 
+        bind (wd:%s as ?protag)
+        ?x wdt:P31 ?protag
+    }
+    """% (entity_id))
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    return len(results['results']['bindings']) > 0

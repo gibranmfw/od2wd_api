@@ -8,7 +8,16 @@ from collections import OrderedDict
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
 from src.utils.indexer import search
-from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty
+from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty, is_class
+
+def sigmoid(x, derivative=False):
+    sigm = 1. / (1. + np.exp(-x))
+    if derivative:
+        return sigm * (1. - sigm)
+    return sigm
+
+def transform_sigmoid(nums):
+    return sigmoid(nums, True) / 0.25
 
 def lDistance(s1, s2):
     if len(s1) > len(s2):

@@ -14,8 +14,8 @@ def preprocessing(text, option=None):
     if(option == 'property'):
         factory = StopWordRemoverFactory()
         stopword = factory.create_stop_word_remover()
-        header = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", header)
-        header = stopword.remove(header)
+        text = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", text)
+        text = stopword.remove(text)
     elif(option == 'protagonist'):
         if("nama " in text):
             text = text.replace("nama ", "")

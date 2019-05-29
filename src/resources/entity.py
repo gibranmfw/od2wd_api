@@ -29,14 +29,14 @@ class EntMapper(object):
                 cand_list.append(res)
                 if(len(cand_list) > limit):
                     break
-                    
+
             if(len(cand_list) > limit):
                 break
 
         res_map['item'] = item
         res_map['link_to'] = cand_list
         return res_map
-        
+
     def search_entity_bacth(self, datas):
         el = map_entity_batch(datas, server.w2v_model)
         return {"results": el}
@@ -48,7 +48,7 @@ class EntityMapper(Resource):
     @ns.expect(parser, validate=True)
     @ns.marshal_with(ents)
     @ns.doc(params={
-        'item': 'String you want to map to Wikidata Entity', 
+        'item': 'String you want to map to Wikidata Entity',
         'context': 'context of the string you want to map',
         'limit': 'Limit entity candidates',
         'is_protagonist': 'True if the entitiy is protagonist, false if not'
@@ -56,3 +56,16 @@ class EntityMapper(Resource):
     def get(self):
         args = parser.parse_args()
         return em.search_entity(args['item'], args['context'], args['limit'], args['is_protagonist'])
+
+    @ns.expect(ent_list, validate=True)
+    @ns.marshal_list_with(ent_response_list)
+    @ns.doc(params={
+        'item': 'String you want to map to Wikidata Entity', 
+        'context': 'context of the string you want to map',
+        'limit': 'Limit entity candidates',
+        'is_protagonist': 'True if the entitiy is protagonist, false if not'
+        })
+    def post(self):
+        return em.search_entity_bacth(ns.payload['entities'])
+
+

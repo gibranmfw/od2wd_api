@@ -47,3 +47,13 @@ class PropertyMapper(Resource):
     def get(self):
         args = parser.parse_args()
         return pm.search_property(args['item'], args['item_range'], args['limit'])
+
+    @ns.expect(prop_list, validate=True)
+    @ns.marshal_list_with(prop_response_list)
+    @ns.doc(params={
+        'item': 'String you want to map to Wikidata Property', 
+        'item_range': 'Range of that Property',
+        'limit': 'Limit entity candidates'
+        })
+    def post(self):
+        return pm.search_property_batch(ns.payload['properties'])

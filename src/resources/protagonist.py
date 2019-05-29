@@ -34,4 +34,5 @@ class ProtagonistMapper(Resource):
     def get(self):
         args = parser.parse_args()
         return pm.map_protagonist(args['item'], args['limit'])
+
         

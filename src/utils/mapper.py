@@ -63,12 +63,15 @@ def ranking(candidateList, property_data, model, is_protagonist=False):
         else:
             results = searchObjWProperty(candidate['id'], 'P31')
             sim = 0
-            if(len(results['results']['bindings']) > 0):
-                candVector = phrase_vector(model, property_data)
-                prop_class = preprocessing(results['results']['bindings'][0]['itemLabel']['value'])
-                contVector = phrase_vector(model, prop_class)
-                if(candVector is not None and contVector is not None):
-                    sim = cosine_sim(candVector, contVector)
+            if(len(results['results']['bindings']) <= 0):
+                results = searchObjWProperty(candidate['id'], 'P279')
+                if(len(results['results']['bindings']) <= 0):
+                    continue
+                    
+            candVector = phrase_vector(model, propertyLbl)
+            contVector = phrase_vector(model, preprocessing(results['results']['bindings'][0]['itemLabel']['value']))
+            if(candVector is not None and contVector is not None):
+                sim = cosine_sim(candVector, contVector)
             res.append({'candidate': candidate, 'score': sim})
     return res
 
@@ -106,7 +109,7 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
         if(qword_vector is not None):
             for json in jsons:
                 sim = 0
-                elabel = json['candidate']['label']
+                elabel = json['candidate']['match']['text']
                 elabel = preprocessing(elabel)
                 eword_vector = phrase_vector(model, elabel)
                 if(eword_vector is not None):
@@ -252,7 +255,7 @@ def protagonist_mapping(protagonist, limit, w2v_model):
                 alias = []
                 if('aliases' in json.keys()):
                     alias = json['aliases']
-                label = json['match']['text']
+                label = json['candidate']['match']['text']
                 if(label not in alias):
                     alias.append(label)
 
@@ -281,7 +284,7 @@ def protagonist_mapping(protagonist, limit, w2v_model):
                 alias = []
                 if('aliases' in json.keys()):
                     alias = json['aliases']
-                label = json['match']['text']
+                label = json['candidate']['match']['text']
                 if(label not in alias):
                     alias.append(label)
 

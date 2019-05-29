@@ -5,6 +5,7 @@ from src.server.instance import server
 from src.models.protagonist import protag, protag_response_list
 from src.environment.instance import env
 from src.utils.mapper import protagonist_mapping
+from flask_restplus import reqparse
 
 app, ns = server.app, server.ns
 
@@ -18,13 +19,19 @@ class ProtagMapper(object):
 
 pm = ProtagMapper()
 
+parser = reqparse.RequestParser()
+parser.add_argument('item', required=True, help="String you want to map to Wikidata Entity")
+parser.add_argument('limit', required=True, type=int)
+
 @ns.route('/protagonist')
 class ProtagonistMapper(Resource):
-    @ns.expect(protag, validate=True)
+    @ns.expect(parser, validate=True)
     @ns.marshal_list_with(protag_response_list)
     @ns.doc(params={
         'item': 'String you want to map to Wikidata Entity', 
         'limit': 'Limit entity candidates'
         })
-    def post(self):
-        return pm.map_protagonist(ns.payload['item'], ns.payload['limit'])
+    def get(self):
+        args = parser.parse_args()
+        return pm.map_protagonist(args['item'], args['limit'])
+        

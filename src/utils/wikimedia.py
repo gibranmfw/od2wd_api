@@ -9,7 +9,6 @@ def searchEntity(keyword, limit):
 
 def searchObjWProperty(subject_id, property_id):
     sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
-
     sparql.setQuery("""
     SELECT ?item ?itemLabel
     WHERE

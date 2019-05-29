@@ -68,10 +68,12 @@ def ranking(candidateList, property_data, model, is_protagonist=False):
                 if(len(results['results']['bindings']) <= 0):
                     continue
                     
-            candVector = phrase_vector(model, propertyLbl)
+            candVector = phrase_vector(model, property_data)
             contVector = phrase_vector(model, preprocessing(results['results']['bindings'][0]['itemLabel']['value']))
             if(candVector is not None and contVector is not None):
                 sim = cosine_sim(candVector, contVector)
+                if(sim < 2):
+                    sim = 0
             res.append({'candidate': candidate, 'score': sim})
     return res
 
@@ -108,6 +110,8 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
         qword_vector = phrase_vector(model, data)
         if(qword_vector is not None):
             for json in jsons:
+                if(json['candidate']['match']['language'] != 'id'):
+                    continue
                 sim = 0
                 elabel = json['candidate']['match']['text']
                 elabel = preprocessing(elabel)
@@ -131,6 +135,8 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
                         result[score] = [ent_map]
         else:
             for json in jsons:
+                if(json['candidate']['match']['language'] != 'id'):
+                    continue
                 elabel = json['candidate']['label']
                 dist = lDistance(elabel, data)
                 if(dist <= 3):
@@ -250,6 +256,8 @@ def protagonist_mapping(protagonist, limit, w2v_model):
     result = {}
     if(qword_vector is not None):
         for json in jsons:
+            if(json['candidate']['match']['language'] != 'id'):
+                continue
             ids = json['id']
             if(is_class(ids)):
                 alias = []
@@ -279,6 +287,8 @@ def protagonist_mapping(protagonist, limit, w2v_model):
                     result[sim] = [protag_map]
     else:
         for json in jsons:
+            if(json['candidate']['match']['language'] != 'id'):
+                continue
             ids = json['id']
             if(is_class(ids)):
                 alias = []

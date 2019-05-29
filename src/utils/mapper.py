@@ -152,7 +152,7 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
         result = OrderedDict(islice(result.items(), 0, limit))
     
     return result
-
+    
 def map_entity_batch(datas, model):
     res_list = []
     for data in datas:

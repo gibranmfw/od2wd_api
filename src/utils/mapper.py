@@ -256,14 +256,14 @@ def protagonist_mapping(protagonist, limit, w2v_model):
     result = {}
     if(qword_vector is not None):
         for json in jsons:
-            if(json['candidate']['match']['language'] != 'id'):
+            if(json['match']['language'] != 'id'):
                 continue
             ids = json['id']
             if(is_class(ids)):
                 alias = []
                 if('aliases' in json.keys()):
                     alias = json['aliases']
-                label = json['candidate']['match']['text']
+                label = json['match']['text']
                 if(label not in alias):
                     alias.append(label)
 
@@ -287,14 +287,14 @@ def protagonist_mapping(protagonist, limit, w2v_model):
                     result[sim] = [protag_map]
     else:
         for json in jsons:
-            if(json['candidate']['match']['language'] != 'id'):
+            if(json['match']['language'] != 'id'):
                 continue
             ids = json['id']
             if(is_class(ids)):
                 alias = []
                 if('aliases' in json.keys()):
                     alias = json['aliases']
-                label = json['candidate']['match']['text']
+                label = json['match']['text']
                 if(label not in alias):
                     alias.append(label)
 

@@ -1,22 +1,28 @@
 import requests
 import json
+import urllib
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 def searchEntity(keyword, limit):
+    keyword = urllib.parse.quote(keyword)
     url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&limit={}&language=id&format=json".format(keyword,limit)
     res = requests.get(url)
     return json.loads(res.text)
 
 def searchObjWProperty(subject_id, property_id):
     sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+
     sparql.setQuery("""
-    SELECT ?item ?itemLabel
+    SELECT ?item ?itemLabel ?grandItem ?grandItemLabel
     WHERE
     {
-        wd:%s wdt:%s ?item .
-        SERVICE wikibase:label { bd:serviceParam wikibase:language "id" }
+      bind (wd:%s as ?entity)
+      wd:%s wdt:%s ?item .
+      ?item wdt:P279 ?grandItem
+      MINUS { ?entity wdt:P31 wd:Q4167410 }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "id" }
     }
-    """ % (subject_id, property_id))
+    """ % (subject_id, subject_id, property_id))
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
     return results

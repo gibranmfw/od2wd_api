@@ -16,14 +16,21 @@ def preprocessing(text, option=None):
         stopword = factory.create_stop_word_remover()
         text = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", text)
         text = stopword.remove(text)
+
     elif(option == 'protagonist'):
-        if("nama " in text):
-            text = text.replace("nama ", "")
+        text = text.replace('_', ' ')
+        if(' ' in text):
+            protag_list = text.split(' ')
+            text = ' '.join(protag_list[1:len(protag_list)])
+        if('/' in text):
+            protag_list = text.split('/')
+            text = protag_list[0]
 
     text = text.replace('_', ' ')
     text = text.replace('(', '')
     text = text.replace(')', '')
     text = text.replace(',', ' ')
+    text = text.replace('&', ' ')
     text = text.lower()
 
     return text
@@ -66,14 +73,27 @@ def ranking(candidateList, property_data, model, is_protagonist=False):
             if(len(results['results']['bindings']) <= 0):
                 results = searchObjWProperty(candidate['id'], 'P279')
                 if(len(results['results']['bindings']) <= 0):
+                    if('description' in candidate and candidate['description'] == 'Wikimedia disambiguation page'):
+                        continue
+                    res.append({'candidate': candidate, 'score': 0})
                     continue
                     
             candVector = phrase_vector(model, property_data)
-            contVector = phrase_vector(model, preprocessing(results['results']['bindings'][0]['itemLabel']['value']))
-            if(candVector is not None and contVector is not None):
-                sim = cosine_sim(candVector, contVector)
-                if(sim < 2):
-                    sim = 0
+            if(candVector is not None):
+                for parent in results['results']['bindings']:
+                    parVector = phrase_vector(model, preprocessing(parent['itemLabel']['value']))
+                    gpVector = phrase_vector(model, preprocessing(parent['grandItemLabel']['value']))
+                    temp = 0
+                    if(parVector is not None):
+                        temp = 0
+                        temp = cosine_sim(candVector, parVector)
+                    if(gpVector is not None):
+                        temp2 = cosine_sim(candVector, gpVector)
+                        temp = temp if temp > temp2 else temp2 
+                    sim = sim if sim > temp else temp
+            
+            if(sim <= 0.2):
+                sim = 0
             res.append({'candidate': candidate, 'score': sim})
     return res
 
@@ -90,6 +110,8 @@ def phrase_vector(model, word):
     try:
         lword_vector = model[lwords[0]]
         for n in range(1, len(lwords)):
+            if(lwords[n].isnumeric()):
+                continue
             lword_vector = lword_vector + model[lwords[n]]
     except KeyError:
         lword_vector = None
@@ -110,8 +132,6 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
         qword_vector = phrase_vector(model, data)
         if(qword_vector is not None):
             for json in jsons:
-                if(json['candidate']['match']['language'] != 'id'):
-                    continue
                 sim = 0
                 elabel = json['candidate']['match']['text']
                 elabel = preprocessing(elabel)
@@ -129,6 +149,8 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
                         }
                     
                     score = min(np.average([sim, json['score']]), 1.0)
+                    if(json['candidate']['match']['language'] != 'id' and json['candidate']['match']['language'] != 'su'):
+                        score = score * 0.5
                     if(score in result.keys()):
                         result[score].append(ent_map)
                     else:
@@ -137,7 +159,7 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
             for json in jsons:
                 if(json['candidate']['match']['language'] != 'id'):
                     continue
-                elabel = json['candidate']['label']
+                elabel = json['candidate']['match']['text']
                 dist = lDistance(elabel, data)
                 if(dist <= 3):
                     description = ''
@@ -149,6 +171,8 @@ def map_entity(data, context, model, limit=10, is_protagonist=False):
                     'description': description
                     }
                     score = np.average([json['score'], transform_sigmoid(dist)])
+                    if(json['candidate']['match']['language'] != 'id' and json['candidate']['match']['language'] != 'su'):
+                        score = score * 0.5
                     if(score in result.keys()):
                         result[score].append(ent_map)
                     else:
@@ -224,9 +248,16 @@ def map_property(header, header_range, property_index, w2v_model, es_client, lim
 
                 sim = best_sim_score(alias_vector, qword_vector)
 
+            pattern = re.compile("^(P[0-9]+)+$")
+            lbl = ''
+            if(pattern.match(item['_source']['labelId'])):
+                lbl = item['_source']['labelEn']
+            else:
+                lbl = item['_source']['labelId']
+
             result[min(sim, 1.0)] = {
                 'id': item['_source']['id'], 
-                'label': item['_source']['labelId'],
+                'label': lbl,
                 'description': item['_source']['descriptionEn']
                 }
     
@@ -256,8 +287,8 @@ def protagonist_mapping(protagonist, limit, w2v_model):
     result = {}
     if(qword_vector is not None):
         for json in jsons:
-            if(json['candidate']['match']['language'] != 'id'):
-                continue
+            # if(json['candidate']['match']['language'] != 'id'):
+            #     continue
             ids = json['id']
             if(is_class(ids)):
                 alias = []

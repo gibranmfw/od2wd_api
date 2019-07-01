@@ -8,6 +8,14 @@ from src.utils.mapper import map_property_batch, map_property
 from flask_restplus import reqparse
 
 app, ns = server.app, server.ns
+range_map = {
+    'string':'String',
+    'wikibaseitem':'WikibaseItem',
+    'quantity':'Quantity',
+    'globecoordinate':'GlobeCoordinate',
+    'time':'Time',
+    'url':'Url'
+    }
 
 class PropMapper(object):
     def __init__(self):
@@ -16,7 +24,9 @@ class PropMapper(object):
     def search_property(self, item, item_range, limit):
         res_map = {}
         cand_list = []
-        cand_props = map_property(item, item_range, self.property_index, server.w2v_model, server.es, limit)
+        ir = item_range.lower()
+        ir = range_map[ir]
+        cand_props = map_property(item, ir, self.property_index, server.w2v_model, server.es, limit)
         for key, value in cand_props.items():
             res = {"id": value['id'], "label": value['label'], "description": value['description'], "score": key}
             cand_list.append(res)

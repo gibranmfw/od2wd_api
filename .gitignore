@@ -75,4 +75,8 @@ pyvenv.cfg
 data/dump/idwiki-latest-pages-articles.xml.bz2
 data/model/
 
+# Notebook
+.ipynb_checkpoints
+.nbgrader.log
+
 lib64

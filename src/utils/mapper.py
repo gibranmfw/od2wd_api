@@ -85,7 +85,6 @@ def ranking(candidateList, property_data, model, is_protagonist=False):
                     gpVector = phrase_vector(model, preprocessing(parent['grandItemLabel']['value']))
                     temp = 0
                     if(parVector is not None):
-                        temp = 0
                         temp = cosine_sim(candVector, parVector)
                     if(gpVector is not None):
                         temp2 = cosine_sim(candVector, gpVector)

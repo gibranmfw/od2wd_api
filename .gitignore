@@ -79,4 +79,7 @@ data/model/
 .ipynb_checkpoints
 .nbgrader.log
 
+# Testing data
+data/test/
+
 lib64

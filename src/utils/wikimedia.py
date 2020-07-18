@@ -3,6 +3,68 @@ import json
 import urllib
 from SPARQLWrapper import SPARQLWrapper, JSON
 
+def orAdder(text):
+    return " OR ".join(text.split(' '))
+
+def getEntityData(entity):
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql.setQuery("""
+    SELECT ?entity ?label ?entityDescription ?altLabel 
+    WHERE {
+      BIND(wd:%s as ?entity) .
+      OPTIONAL { 
+        ?entity rdfs:label ?label filter (lang(?label) = "id") .
+        ?entity schema:description ?entityDescription filter (lang(?entityDescription) = "id") .
+        ?entity skos:altLabel ?altLabel . FILTER (lang(?altLabel) = "id") 
+      }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "id" }   
+    }
+    """ % (entity))
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    return results['results']['bindings']
+
+def get_labels(entity_id):
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql.setQuery("""
+    SELECT ?label
+    WHERE {
+      BIND(wd:%s AS ?entityId)
+      ?entityId rdfs:label ?label .
+      filter(lang(?label) = 'id' || lang(?label) = 'en')
+    }
+    """% (entity_id))
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()['results']['bindings']
+    labels = []
+    for result in results:
+        label = result['label']['value']
+        if (label not in labels):
+            labels.append(label)
+    return labels
+
+def searchEntityWikimedia(keyword, context, limit=5):
+    
+    req = requests.Session()
+    url = "https://www.wikidata.org/w/api.php"
+    search = "\"{}\" {}".format(keyword, " OR ".join([(lambda x: orAdder(x))(x) for x in context]))
+    params = {
+        "action": "query",
+        "format": "json",
+        "list": "search",
+        "srsearch": search,
+        "srlimit": limit
+    }
+
+    R = req.get(url=url, params=params)
+    return R.json()['query']['search']
+
+def searchEntityWikidata(keyword, limit):
+    keyword = urllib.parse.quote(keyword)
+    url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&language=id&format=json".format(keyword)
+    res = requests.get(url)
+    return json.loads(res.text)
+
 def searchEntity(keyword, limit):
     keyword = urllib.parse.quote(keyword)
     url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search={}&limit={}&language=id&format=json".format(keyword,limit)

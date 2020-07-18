@@ -2,10 +2,11 @@ from flask_restplus import fields
 from src.server.instance import server
 
 ent = server.api.model('linking input', {
-    'item': fields.String(required=True, min_length=1, description='String you want to map to Wikidata Entity', example='kelapa gading'),
-    'context': fields.String(required=True, min_length=1, description='Context of the string you want to map. If is_protagonist is true, context is id of the class of the entity you want to link', example='kecamatan'),
+    'item': fields.String(required=True, min_length=1, description='String you want to map to Wikidata Entity', example='sman 1'),
+    'headerValue': fields.String(required=True, min_length=1, description='Header of the item in the CSV', example='sekolah'),
+    'contexts': fields.List(fields.String(required=True, min_length=1, description='Context of the string you want to map. If is_protagonist is true, context is id of the class of the entity you want to link', example='jakarta')),
     'limit': fields.Integer(required=True, description='Limit entity candidates', example=10),
-    'is_protagonist': fields.Boolean(required=True, description='True if the entitiy is protagonist, false if not', example=False, default=False)
+    # 'is_protagonist': fields.Boolean(required=True, description='True if the entitiy is protagonist, false if not', example=False, default=False)
 })
 
 ent_response = server.api.model('entity', {
@@ -17,7 +18,7 @@ ent_response = server.api.model('entity', {
 
 ents = server.api.model('candidate entities', {
     'item': fields.String(required=True, min_length=1, description='String you want to map to Wikidata Entity', example='kelapa gading'),
-    'link_to': fields.List(fields.Nested(ent_response))
+    # 'link_to': fields.List(fields.Nested(ent_response))
 })
 
 ent_list = server.api.model('bulk linking', {

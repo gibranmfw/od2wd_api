@@ -8,7 +8,7 @@ from collections import OrderedDict
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
 from src.utils.indexer import search
-from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty, is_class, is_instance_of
+from src.utils.wikimedia import searchEntity, searchObjWProperty, searchProperty, is_class, is_instance_of, searchEntityWikidata, searchEntityWikimedia, getEntityData, get_labels
 
 def preprocessing(text, option=None):
     if(option == 'property'):
@@ -120,89 +120,88 @@ def phrase_vector(model, word):
 def cosine_sim(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1)* np.linalg.norm(v2))
 
-def map_entity(data, context, model, limit=10, is_protagonist=False):
-    result = {}
-    data = preprocessing(data)
-    context = preprocessing(context)
-    jsons = searchEntity(data, limit)['search']
-    jsons = ranking(jsons, context, model, is_protagonist)
-    
-    if(len(jsons) > 0):
-        qword_vector = phrase_vector(model, data)
-        if(qword_vector is not None):
-            for json in jsons:
-                sim = 0
-                elabel = json['candidate']['match']['text']
-                elabel = preprocessing(elabel)
-                eword_vector = phrase_vector(model, elabel)
-                if(eword_vector is not None):
-                    sim = cosine_sim(qword_vector, eword_vector)
-                    description = ''
-                    if('description' in json['candidate']):
-                        description = json['candidate']['description']
-                    
-                    ent_map = {
-                        'id': json['candidate']['id'], 
-                        'label': json['candidate']['label'],
-                        'description': description
-                        }
-                    
-                    score = min(np.average([sim, json['score']]), 1.0)
-                    if(json['candidate']['match']['language'] != 'id' and json['candidate']['match']['language'] != 'su'):
-                        score = score * 0.5
-                    if(score in result.keys()):
-                        result[score].append(ent_map)
-                    else:
-                        result[score] = [ent_map]
-        else:
-            for json in jsons:
-                if(json['candidate']['match']['language'] != 'id'):
-                    continue
-                elabel = json['candidate']['match']['text']
-                dist = lDistance(elabel, data)
-                if(dist <= 3):
-                    description = ''
-                    if('description' in json['candidate']):
-                        description = json['candidate']['description']
-                    ent_map = {
-                    'id': json['candidate']['id'], 
-                    'label': json['candidate']['label'],
-                    'description': description
-                    }
-                    score = np.average([json['score'], transform_sigmoid(dist)])
-                    if(json['candidate']['match']['language'] != 'id' and json['candidate']['match']['language'] != 'su'):
-                        score = score * 0.5
-                    if(score in result.keys()):
-                        result[score].append(ent_map)
-                    else:
-                        result[score] = [ent_map] 
+def getEntityCandidate(keyword, context, limit=5):
+    entities = searchEntityWikimedia(keyword, context, limit)
+    res = []
+    for entity in entities:
+        resultEntity = getEntityData(entity['title'])
+        if (len(resultEntity) > 0):
+            resultEntity = resultEntity[0]
+            description = resultEntity['entityDescription']['value'] if 'entityDescription' in resultEntity else ''
+            label = resultEntity['label']['value'] if 'label' in resultEntity else ''
+            res.append({
+                'id': resultEntity['entity']['value'].split('/')[4],
+                'label': label,
+                'description': description
+            })
+    return res
 
-    if(len(result) == 0):
-        result[0] = [{'id': 'NOT FOUND', 'label':'NOT FOUND', 'description':'NOT FOUND'}]
+def checkProperty(model, entityId, columnValue):
+    results = searchObjWProperty(entityId, 'P31')
+    sim = 0
+    if(len(results['results']['bindings']) <= 0):
+        results = searchObjWProperty(entityId, 'P279')
+        if(len(results['results']['bindings']) <= 0):
+            return 0
+    candVector = phrase_vector(model, columnValue)
+    if(candVector is not None):
+        for parent in results['results']['bindings']:
+            parVector = phrase_vector(model, preprocessing(parent['itemLabel']['value']))
+            gpVector = phrase_vector(model, preprocessing(parent['grandItemLabel']['value']))
+            temp = 0
+            if(parVector is not None):
+                temp = cosine_sim(candVector, parVector)
+            if(gpVector is not None):
+                temp2 = cosine_sim(candVector, gpVector)
+                temp = temp if temp > temp2 else temp2 
+            sim = sim if sim > temp else temp
+
+    return sim
+
+def checkEntity(model, keyword, entityId):
+    entityVector = phrase_vector(model, keyword)
+    sim = 0
+    if (entityVector is not None):
+        labels = get_labels(entityId)
+        for label in labels:
+            cleanLabel = preprocessing(label)
+            labelVector = phrase_vector(model, cleanLabel)
+            temp = 0
+            if (labelVector is not None):
+                temp = cosine_sim(entityVector, labelVector)
+            sim = sim if sim > temp else temp
+    return sim
+
+def mapEntity(model, keyword, columnValue, context, limit=5):
+    clean_keyword = preprocessing(keyword)
+    entities = getEntityCandidate(clean_keyword, context, limit)
+    if (len(entities) < 1):
+        print('{} score: 0'.format(keyword))
+        return {'label': 'NOT FOUND', 'id': 'NOT FOUND'}
+    entity = entities[0]
+    if('description' in entity and entity['description'] == 'Wikimedia disambiguation page'):
+        return None
+    initialScore = checkProperty(model, entity['id'], columnValue)
+    entityScore = checkEntity(model, clean_keyword, entity['id'])
+    finalScore = (initialScore + entityScore) / 2
+    # print('{} score: {}'.format(keyword, finalScore))
+    if (finalScore > 0.3):
+        entity['score'] = finalScore
+        return entity
     else:
-        result = OrderedDict(sorted(result.items(), reverse=True))
-        result = OrderedDict(islice(result.items(), 0, limit))
-    
-    return result
+        return {'label': 'NOT FOUND', 'id': 'NOT FOUND', 'description': 'NOT FOUND', 'score': 0}
     
 def map_entity_batch(datas, model):
     res_list = []
     for data in datas:
         res_map = {}
-        cand_list = []
-        limit = data['limit']
-        cand_ent = map_entity(data['item'], data['context'], model, limit, data['is_protagonist'])
-        for key, value in cand_ent.items():
-            for item in value:
-                res = {"id": item['id'], "label": item['label'], "description": item['description'], 'score': key}
-                cand_list.append(res)
-                if(len(cand_list) > limit):
-                    break
-                    
-            if(len(cand_list) > limit):
-                break
-        res_map['item'] = data['item']
-        res_map['link_to'] = cand_list
+        contexts = data['contexts']
+        contexts.append(data['headerValue'])
+        res_map = {}
+        # model, keyword, columnValue, context, limit=5
+        el = mapEntity(model, data['item'], data['headerValue'], contexts, data['limit'])
+        res = {"id": el['id'], "label": el['label'], "description": el['description'], 'score': el['score']}
+        res_map['item'] = res
         res_list.append(res_map)
     return res_list
 

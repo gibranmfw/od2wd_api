@@ -1,0 +1,11 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix nif: <http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#> .
+@prefix itsrdf: <http://www.w3.org/2005/11/its/rdf#> .
+
+<test>
+ a nif:RFC5147String , nif:String , nif:Context ;
+ nif:beginIndex "0"^^xsd:nonNegativeInteger ;
+ nif:endIndex "45"^^xsd:nonNegativeInteger ;
+ nif:isString "Data Pemenang Lomba Hari Anak Jakarta Membaca"@id .

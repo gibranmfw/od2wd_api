@@ -6,6 +6,7 @@ import sys, os
 # so that they register with the server 
 from src.resources.property import *
 from src.resources.entity import *
+from src.resources.ner import *
 import click
 
 @server.app.cli.command()

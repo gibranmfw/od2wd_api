@@ -4,7 +4,7 @@ import urllib
 from rdflib import Graph
 
 def startNER(userInput):
-    
+    preprocessedUserInput = ' '.join(elem.capitalize() for elem in userInput.split())
     headers = {
         'Content-Type': 'application/x-turtle'
     }
@@ -17,7 +17,7 @@ def startNER(userInput):
         "@prefix itsrdf: <http://www.w3.org/2005/11/its/rdf#> .\r\n\r\n"
         "<http://www.od2wd.id/evaluate/sentence-1>\r\n"
         " a nif:RFC5147String , nif:String , nif:Context ;\r\n"
-        " nif:isString \"" + userInput + "\"@id ."
+        " nif:isString \"" + preprocessedUserInput + "\"@id ."
     )
 
     response = requests.post(url, headers=headers, data=payload)

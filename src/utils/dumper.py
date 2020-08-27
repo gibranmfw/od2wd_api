@@ -2,7 +2,7 @@ import json
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 def dump_property(filename='property.json', path_to_save='resource/dump/'):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT ?property ?propertyLabel ?propertyDescription ?altLabel ?type 

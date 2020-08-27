@@ -7,7 +7,7 @@ def orAdder(text):
     return " OR ".join(text.split(' '))
 
 def getEntityData(entity):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
     sparql.setQuery("""
     SELECT ?entity ?label ?entityDescription ?altLabel 
     WHERE {
@@ -25,7 +25,7 @@ def getEntityData(entity):
     return results['results']['bindings']
 
 def get_labels(entity_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
     sparql.setQuery("""
     SELECT ?label
     WHERE {
@@ -72,7 +72,7 @@ def searchEntity(keyword, limit):
     return json.loads(res.text)
 
 def searchObjWProperty(subject_id, property_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT ?item ?itemLabel ?grandItem ?grandItemLabel
@@ -90,7 +90,7 @@ def searchObjWProperty(subject_id, property_id):
     return results
 
 def searchSbjWProperty(object_id, property_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT ?item ?itemLabel
@@ -105,7 +105,7 @@ def searchSbjWProperty(object_id, property_id):
     return results
 
 def searchProperty(subject_id, object_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT ?item ?itemLabel
@@ -120,7 +120,7 @@ def searchProperty(subject_id, object_id):
     return results
 
 def searchPropertyRange(property_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     #Subproperties of location (P276)
@@ -135,7 +135,7 @@ def searchPropertyRange(property_id):
     return results
 
 def is_class(entity_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT distinct ?protag  WHERE { 
@@ -148,7 +148,7 @@ def is_class(entity_id):
     return len(results['results']['bindings']) > 0
 
 def is_instance_of(entity_id, class_id):
-    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11")
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql", agent="od2wd/1.0 (https://od2wd.id/about; adm.od2wd@gmail.com) SPARQLWrapper/1.8.2")
 
     sparql.setQuery("""
     SELECT ?item ?itemLabel
